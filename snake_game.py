@@ -2,7 +2,7 @@ import pygame
 import numpy as np
 import math as mt
 import snake_table as st
-
+"""Snake game base"""
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
