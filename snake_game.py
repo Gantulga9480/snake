@@ -1,6 +1,5 @@
 import pygame
 import numpy as np
-import math as mt
 import snake_table as st
 """Snake game base"""
 BLACK = (0, 0, 0)
@@ -148,19 +147,27 @@ class Snake:
             self.ldir = tmp
         if self.out:
             self.reward = OUT_REWARD
-            return True, [self.snake[0][1], self.snake[0][0]], \
-                self.board.flatten(), self.reward, play
+            return True, [self.get_state(), self.food_dist()], \
+                self.reward, play
         elif self.food_hit:
-            # self.v.reset(self.board.copy())
             self.food_hit = False
             self.reward = FOOD_REWARD
-            return False, [self.snake[0][1], self.snake[0][0]], \
-                self.board.flatten(), self.reward, play
+            return False, [self.get_state(), self.food_dist()], \
+                self.reward, play
         else:
-            # self.v.update(self.board.copy(), ur=self.update_rate)
             self.reward = EMPTY_STEP_REWARD
-            return False, [self.snake[0][1], self.snake[0][0]], \
-                self.board.flatten(), self.reward, play
+            return False, [self.get_state(), self.food_dist()], \
+                self.reward, play
+    
+    def food_dist(self):
+        x = self.food_x - self.snake[0][1]
+        y = self.food_y - self.snake[0][0]
+        return np.array([x, y])
+
+    def step_reward(self):
+        x = self.food_x - self.snake[0][1]
+        y = self.food_y - self.snake[0][0]
+        return 27 - np.sqrt()
 
     def get_state(self):
         state = []
