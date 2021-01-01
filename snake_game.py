@@ -1,7 +1,6 @@
 import pygame
 import numpy as np
-import snake_table as st
-"""Snake game base"""
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -27,23 +26,18 @@ OUT_REWARD = - FOOD_REWARD * 10
 EMPTY_STEP_REWARD = -20
 
 
-def init(status):
-    status = status if status is not None else ""
+def init():
     pygame.init()
-    pygame.display.set_caption(f"SNAKE {status}")
+    pygame.display.set_caption("SNAKE")
 
 
 class Snake:
 
-    def __init__(self, colorful=False, num=False, update_rate=1):
+    def __init__(self):
+        self.play = True
         self.fps = 60
-        self.colorful = colorful
-        self.num = num
-        self.update_rate = update_rate if update_rate is not None else 1
         self.vel = VELOCITY
         self.shape = SHAPE
-        font_size = np.int(SHAPE - np.sqrt(2*(SHAPE/3)**2))
-        self.font1 = pygame.font.SysFont("arial", font_size)
         self.font = pygame.font.SysFont("arial", 25)
         self.win = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
@@ -56,22 +50,16 @@ class Snake:
         self.food_hit = False
         self.game_flip = True
         self.reward = 0
+        self.score = 0
         self.ldir = ""
-        self.v = st.ValueFunction(size=BOARD_COUNT,
-                                  snake=[TAIL, FOOD],
-                                  rewards=[OUT_REWARD, FOOD_REWARD,
-                                           EMPTY_STEP_REWARD],
-                                  update_rate=self.update_rate)
 
-    def step(self, auto=False, action=None):
-        # pygame.display.set_caption(f"SNAKE {self.update_rate}")
-        play = True
+    def step(self, action=None):
         if self.game_flip:
             self.draw_game()
         tmp = self.snake[0][2]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                play = False
+                self.play = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if not self.game_flip:
@@ -82,30 +70,36 @@ class Snake:
                     self.fps += 2
                 elif event.key == pygame.K_DOWN:
                     self.fps -= 2
-                elif event.key == pygame.K_RIGHT:
-                    self.update_rate += 1
-                elif event.key == pygame.K_LEFT:
-                    self.update_rate -= 1
-                elif event.key == pygame.K_c:
-                    if self.colorful:
-                        self.colorful = False
-                    else:
-                        self.colorful = True
-        if auto:
-            self.snake[0][2] = \
-                self.brain.move(self.snake[0].copy(),
-                                self.snake[len(self.snake) - 1].copy(),
-                                self.board, [self.food_x,
-                                self.food_y])
-        else:
+
+        if self.snake[0][2] == "↑":
             if action == 0:
-                self.snake[0][2] = "↑"
+                pass
+            elif action == 1:
+                self.snake[0][2] = "←"
+            elif action == 2:
+                self.snake[0][2] = "→"
+        elif self.snake[0][2] == "←":
+            if action == 0:
+                pass
             elif action == 1:
                 self.snake[0][2] = "↓"
             elif action == 2:
-                self.snake[0][2] = "←"
-            elif action == 3:
+                self.snake[0][2] = "↑"
+        elif self.snake[0][2] == "↓":
+            if action == 0:
+                pass
+            elif action == 1:
                 self.snake[0][2] = "→"
+            elif action == 2:
+                self.snake[0][2] = "←"
+        elif self.snake[0][2] == "→":
+            if action == 0:
+                pass
+            elif action == 1:
+                self.snake[0][2] = "↑"
+            elif action == 2:
+                self.snake[0][2] = "↓"
+
         for index, block in enumerate(self.snake):
             if index == 0:
                 self.head = True
@@ -145,31 +139,42 @@ class Snake:
             else:
                 self.snake[index] = self.draw_snake(block.copy())
             self.ldir = tmp
+        self.score = len(self.snake) - 3
         if self.out:
             self.reward = OUT_REWARD
-            return True, [self.get_state(), self.food_dist()], \
-                self.reward, play
+            return True, self.get_state(), self.reward
         elif self.food_hit:
             self.food_hit = False
             self.reward = FOOD_REWARD
-            return False, [self.get_state(), self.food_dist()], \
-                self.reward, play
+            return False, self.get_state(), self.reward
         else:
-            self.reward = EMPTY_STEP_REWARD
-            return False, [self.get_state(), self.food_dist()], \
-                self.reward, play
-    
-    def food_dist(self):
-        x = self.food_x - self.snake[0][1]
-        y = self.food_y - self.snake[0][0]
-        return np.array([x, y])
+            self.reward = self.step_reward()
+            return False, self.get_state(), self.reward
 
     def step_reward(self):
         x = self.food_x - self.snake[0][1]
         y = self.food_y - self.snake[0][0]
-        return 27 - np.sqrt()
+        return 13 - np.sqrt(x**2 + y**2)
 
     def get_state(self):
+        if self.snake[0][2] == "↑":
+            s_dir = 0
+        elif self.snake[0][2] == "→":
+            s_dir = 1
+        elif self.snake[0][2] == "↓":
+            s_dir = 2
+        elif self.snake[0][2] == "←":
+            s_dir = 3
+        dist = self.food_dist()
+        state = self.posible_state()
+        return [s_dir, state, dist]
+
+    def food_dist(self):
+        x = np.abs(self.food_x - self.snake[0][1])
+        y = np.abs(self.food_y - self.snake[0][0])
+        return [x, y]
+
+    def posible_state(self):
         state = []
         y = int((self.snake[0][0] - 21)/VELOCITY)
         x = int((self.snake[0][1] - 21)/VELOCITY)
@@ -225,7 +230,15 @@ class Snake:
                 state.append(self.board[x-1][y])
             else:
                 state.append(TAIL)
-        return np.array(state)
+        dis_state = self.state_to_num(state)
+        return dis_state
+
+    def state_to_num(self, state):
+        result = 0
+        for item, ind in enumerate(state):
+            if item == TAIL:
+                result += 2**ind
+        return result
 
     def reset(self):
         self.out = False
@@ -303,7 +316,7 @@ class Snake:
         self.board[rand_food_y][rand_food_x] = FOOD
         self.food_x = rand_food_x
         self.food_y = rand_food_y
-        return [y, x], self.board.flatten()
+        return self.get_state()
 
     def draw_board(self):
         self.win.fill((0, 0, 0))
@@ -378,7 +391,6 @@ class Snake:
         self.win.blit(score, (200, 540))
         for i in range(BOARD_COUNT):
             for j in range(BOARD_COUNT):
-                score = self.v.table[i][j]
                 if self.board[i][j] == HEAD:
                     pygame.draw.rect(self.win, YELLOW,
                                      (self.vel*j+21, self.vel*i+21,
@@ -391,37 +403,5 @@ class Snake:
                     pygame.draw.rect(self.win, GREEN,
                                      (self.vel*j+21, self.vel*i+21,
                                       self.shape, self.shape))
-                else:
-                    if self.colorful:
-                        if score < 0:
-                            if np.abs(score)/FOOD_REWARD >= 1:
-                                pygame.draw.rect(self.win, BLUE,
-                                                 (self.vel*j+21, self.vel*i+21,
-                                                  self.shape, self.shape))
-                            else:
-                                color = 1 - np.abs(score)/FOOD_REWARD
-                                pygame.draw.rect(self.win, (255*color,
-                                                            255*color,
-                                                            255),
-                                                 (self.vel*j+21, self.vel*i+21,
-                                                  self.shape, self.shape))
-                        elif score == 0:
-                            pygame.draw.rect(self.win, WHITE,
-                                             (self.vel*j+21, self.vel*i+21,
-                                              self.shape, self.shape))
-                        else:
-                            color = 1 - score/FOOD_REWARD
-                            pygame.draw.rect(self.win, (255*color,
-                                                        255,
-                                                        255*color),
-                                             (self.vel*j+21, self.vel*i+21,
-                                              self.shape, self.shape))
-                if self.num:
-                    if 0 < np.abs(score)-np.floor(np.abs(score)) < 1:
-                        string1 = f"{np.round(score, 2)}"
-                    else:
-                        string1 = f"{int(score)}"
-                    s = self.font1.render(string1, 1, BLACK)
-                    self.win.blit(s, (j*self.vel + 26, i*self.vel + 26))
         pygame.display.flip()
         self.clock.tick(self.fps)
