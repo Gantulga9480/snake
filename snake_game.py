@@ -22,8 +22,8 @@ EMPTY = 0
 ACTION_SPACE = 4
 
 FOOD_REWARD = BOARD_COUNT * BOARD_COUNT
-OUT_REWARD = - FOOD_REWARD * 10
-EMPTY_STEP_REWARD = -20
+OUT_REWARD = - FOOD_REWARD * 20
+EMPTY_STEP_REWARD = - 20
 
 
 def init():
@@ -54,12 +54,14 @@ class Snake:
         self.ldir = ""
 
     def step(self, action=None):
+        over = False
         if self.game_flip:
             self.draw_game()
         tmp = self.snake[0][2]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.play = False
+                over = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if not self.game_flip:
@@ -141,15 +143,16 @@ class Snake:
             self.ldir = tmp
         self.score = len(self.snake) - 3
         if self.out:
+            over = True
             self.reward = OUT_REWARD
-            return True, self.get_state(), self.reward
+            return over, self.get_state(), self.reward
         elif self.food_hit:
             self.food_hit = False
             self.reward = FOOD_REWARD
-            return False, self.get_state(), self.reward
+            return over, self.get_state(), self.reward
         else:
-            self.reward = self.step_reward()
-            return False, self.get_state(), self.reward
+            self.reward = self.step_reward() + EMPTY_STEP_REWARD
+            return over, self.get_state(), self.reward
 
     def step_reward(self):
         x = self.food_x - self.snake[0][1]
@@ -170,8 +173,8 @@ class Snake:
         return [s_dir, state, dist]
 
     def food_dist(self):
-        x = np.abs(self.food_x - self.snake[0][1])
-        y = np.abs(self.food_y - self.snake[0][0])
+        x = self.food_x - self.snake[0][0]
+        y = self.food_y - self.snake[0][1]
         return [x, y]
 
     def posible_state(self):
