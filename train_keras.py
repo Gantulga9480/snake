@@ -2,21 +2,12 @@ import snake_game as sg
 import numpy as np
 import os
 import random
-import argparse
 from collections import deque
 from tensorflow import keras
 from tensorflow.keras.models import Sequential, save_model, load_model
 from tensorflow.keras.layers import Activation, Dense
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.mixed_precision import experimental as mp
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--description")
-parser.add_argument("-c", "--colorful", action="store_true")
-parser.add_argument("-sv", "--show_val", action="store_true")
-parser.add_argument("-ur", "--update_rate", type=int)
-args = parser.parse_args()
 
 
 os.environ['TF_ENABLE_AUTO_MIXED_PRECISION'] = '1'
@@ -100,9 +91,8 @@ policy = mp.Policy('mixed_float16', loss_scale='dynamic')
 mp.set_policy(policy)
 
 
-sg.init(args.description)
-game = sg.Snake(colorful=args.colorful, num=args.show_val,
-                update_rate=args.update_rate)
+sg.init()
+game = sg.Snake()
 
 main_nn = get_model()
 target_nn = get_model()
@@ -115,18 +105,16 @@ action = None
 
 
 while play:
-    v_state, nn_state = game.reset()
+    nn_state = game.reset()
     terminal = False
     while not terminal:
         FRAME += 1
         if np.random.random() < EPSILON:
-            # action = game.v.getAction(v_state)
             action = np.random.randint(0, 3)
         else:
             action = np.argmax(main_nn.predict(np.expand_dims(nn_state,
                                                               axis=0)))
-        terminal, v_state, new_nn_state, r, play = \
-            game.step(action=action, auto=False)
+        terminal, new_nn_state, r, play = game.step(action=action)
         REPLAY_BUFFER.append([nn_state, action, new_nn_state, r, terminal])
         nn_state = new_nn_state
         EPSILON = max(EPSILON - EPSILON_DECAY, MIN_EPSILON)
@@ -149,5 +137,5 @@ while play:
     
 
 print("Training done congrat!!!")
-main_nn.save("main")
-target_nn.save("target")
+# main_nn.save("main")
+# target_nn.save("target")
