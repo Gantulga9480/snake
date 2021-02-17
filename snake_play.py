@@ -9,9 +9,8 @@ parser.add_argument("-ur", "--update_rate", type=int)
 
 args = parser.parse_args()
 
-sg.init(args.description)
-game = sg.Snake(colorful=args.colorful, num=args.show_val,
-                update_rate=args.update_rate)
+sg.init()
+game = sg.Snake()
 
 for episode in range(10000):
     state = game.reset()

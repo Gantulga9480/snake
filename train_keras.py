@@ -17,8 +17,8 @@ GOAL = 10
 BUFFER_SIZE = 100000
 MIN_BUFFER_SIZE = 20000
 BATCH_SIZE = 32
-DISCOUNT_RATE = 1
-LEARNING_RATE = 0.001
+DISCOUNT_RATE = 0.99
+LEARNING_RATE = 0.0001
 EPSILON = 1
 MIN_EPSILON = 0.01
 EPSILON_DECAY = .00000495
@@ -42,7 +42,7 @@ class MyCallback(keras.callbacks.Callback):
 
 
 def get_model():
-    inputs = keras.Input(shape=(400,), name='digits')
+    inputs = keras.Input(shape=(400,), name='input')
     dense1 = Dense(1024, activation='relu', name='dense_1')
     x = dense1(inputs)
     dense2 = Dense(1024, activation='relu', name='dense_2')
